@@ -2,6 +2,21 @@ const got = require("got");
 
 const PLUGIN_NAME = "cfimgbed";
 
+module.exports = (ctx) => {
+  const register = () => {
+    ctx.helper.uploader.register(PLUGIN_NAME, {
+      handle,
+      name: "CF-Imgbed",
+      config: config,
+    });
+  };
+
+  return {
+    uploader: PLUGIN_NAME,
+    register,
+  };
+};
+
 const handle = async (ctx) => {
   const userConfig = ctx.getConfig(`picBed.${PLUGIN_NAME}`);
   if (!userConfig) {
@@ -59,7 +74,7 @@ const handle = async (ctx) => {
         const uploadedImage = resBody.data[0];
         img.imgUrl = uploadedImage.url;
         img.url = uploadedImage.url;
-        
+
         img.id = uploadedImage.id;
         img.r2Key = uploadedImage.r2Key;
         results.push(img);
@@ -116,7 +131,7 @@ const config = (ctx) => {
   }
   const prompts = [
     {
-      name: "API 端点",
+      name: "apiEndpoint",
       type: "input",
       message: "部署的 CF-ImgBed 访问地址 (e.g., https://your-cf-imgbed.com)",
       default: userConfig.apiEndpoint || "",
@@ -140,7 +155,7 @@ const config = (ctx) => {
       },
     },
     {
-      name: "上传目录",
+      name: "uploadDirectory",
       type: "input",
       message: "上传目录 (可选, e.g., wallpapers/nature)",
       default: userConfig.uploadDirectory || "",
@@ -148,32 +163,4 @@ const config = (ctx) => {
     },
   ];
   return prompts;
-};
-
-module.exports = (ctx) => {
-  const register = () => {
-    ctx.helper.uploader.register(PLUGIN_NAME, {
-      handle,
-      name: "CF-Imgbed",
-      config: config,
-    });
-  };
-
-  // const guiMenu = (ctx) => {
-  //   return [
-  //     {
-  //       label: 'Configure CF-Imgbed',
-  //       async handle (ctx, guiApi) {
-  //         // This would typically open a custom settings UI or use PicGo's default
-  //         // For now, relying on default config menu
-  //         guiApi.showNotification({ title: 'Info', body: 'Use right-click context menu to configure.'})
-  //       }
-  //     }
-  //   ]
-  // }
-
-  return {
-    uploader: PLUGIN_NAME,
-    register,
-  };
 };
