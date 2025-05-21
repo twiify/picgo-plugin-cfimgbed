@@ -1,4 +1,4 @@
-const got = require("got");
+const fetch = require("node-fetch");
 
 const PLUGIN_NAME = "cfimgbed";
 
@@ -14,8 +14,25 @@ module.exports = (ctx) => {
   return {
     uploader: PLUGIN_NAME,
     register,
+    guiMenu
   };
 };
+
+const guiMenu = (ctx) => {
+  return [
+    {
+      label: '查看帮助',
+      async handle (ctx, guiApi) {
+        guiApi.showNotification({
+          title: 'CF-Imgbed 插件信息',
+          body: '请在 PicGo 设置中配置此插件。访问插件的 GitHub 页面获取更多帮助。'
+        })
+        // Optionally, open a URL:
+        ctx.shell.openExternal('https://github.com/twiify/picgo-plugin-cfimgbed')
+      }
+    }
+  ]
+}
 
 const handle = async (ctx) => {
   const userConfig = ctx.getConfig(`picBed.${PLUGIN_NAME}`);
@@ -53,18 +70,33 @@ const handle = async (ctx) => {
         body.uploadDirectory = uploadDirectory;
       }
 
-      const { body: resBody, statusCode } = await got.post(
+      const response = await fetch(
         `${apiEndpoint.replace(/\/$/, "")}/api/upload`,
         {
+          method: 'POST',
           headers: {
             "X-API-Key": apiKey,
             "Content-Type": "application/json",
           },
-          json: body,
-          responseType: "json",
+          body: JSON.stringify(body)
         }
       );
 
+      const statusCode = response.status;
+      let resBody;
+      try {
+        resBody = await response.json();
+      } catch (e) {
+        // Handle cases where response is not JSON, e.g. network error page
+        const textResponse = await response.text();
+        ctx.log.error(`[CF-Imgbed] Failed to parse JSON response. Status: ${statusCode}, Response: ${textResponse}`);
+        ctx.emit('notification', {
+          title: 'CF-Imgbed 上传失败',
+          body: `${img.fileName}: HTTP ${statusCode} - 无法解析服务器响应`
+        });
+        continue; // Skip to next image
+      }
+      
       if (
         statusCode === 200 &&
         resBody.success &&
@@ -132,6 +164,7 @@ const config = (ctx) => {
   const prompts = [
     {
       name: "apiEndpoint",
+      alias: "API 地址",
       type: "input",
       message: "部署的 CF-ImgBed 访问地址 (e.g., https://your-cf-imgbed.com)",
       default: userConfig.apiEndpoint || "",
@@ -145,6 +178,7 @@ const config = (ctx) => {
     },
     {
       name: "apiKey",
+      alias: "API 密钥",
       type: "password",
       message: "API Key (你的API Key)",
       default: userConfig.apiKey || "",
@@ -156,6 +190,7 @@ const config = (ctx) => {
     },
     {
       name: "uploadDirectory",
+      alias: "上传路径",
       type: "input",
       message: "上传目录 (可选, e.g., wallpapers/nature)",
       default: userConfig.uploadDirectory || "",
