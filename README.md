@@ -60,7 +60,7 @@ This plugin uses the `/api/upload` endpoint of the CF-Imgbed API. It sends a `PO
 - `X-API-Key: your_full_api_key`
 - `Content-Type: application/json`
 
-For more details on the CF-Imgbed API, please refer to its [documentation](https://github.com/nsnail/cf-imgbed#api-documentation) (assuming this is the correct project, please update if not).
+For more details on the CF-Imgbed API, please refer to its [documentation](https://github.com/twiify/CF-ImgBed) (assuming this is the correct project, please update if not).
 
 ## License
 
